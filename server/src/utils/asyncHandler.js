@@ -1,10 +1,10 @@
 
-
-const asyncHandler = (requestHandler)=>{
-    return (req, res, next) => {
-        Promise.resolve(requestHandler(req, res, next))
-            .catch((error=>next(error)));
+const TryCatch = (passedFunction) => async (req, res, next) => {
+    try {
+        await passedFunction(req, res, next);
+    } catch (error) {
+        next(error);
     }
-}
+};
 
-export {asyncHandler};
+export { TryCatch};

@@ -11,10 +11,12 @@ app.use(cors({
     credentials: true,
 }));
 
-app.use(express.json());
+app.use(express.json({limit:"10mb"}));
+app.use(cookieParser());
 app.use(express.urlencoded({extended:true}));
 app.use(express.static("public"));
-app.use(cookieParser());
+
+
 
 
 app.use((req, res, next) => {
@@ -30,6 +32,13 @@ app.use((req, res, next) => {
     );
     next();
 });
+
+//importing routes
+import UserRoute from "./routes/user.route.js";
+
+//routes
+
+app.use("/api/auth", UserRoute);
 
 
 
