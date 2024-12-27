@@ -1,8 +1,7 @@
-// import dotenv from 'dotenv';
-// dotenv.config({path:"./.env"});
 
-const { default: app } = require("./app");
-const { default: connectDB } = require("./src/config/db");
+import app from "./app.js";
+import connectDB from './config/db.js';
+
 
 if(process.env.NODE_ENV === 'production'){
     require("dotenv".config)({path:"config/config.env"});
@@ -18,7 +17,7 @@ process.on("uncaughtException", (err)=>{
 connectDB();
 
 const server = app.listen(process.env.PORT, ()=>{
-    console.log(`Server is working on http://localhost:${process.env.PORT}`);
+    console.log(`Server is working on port: ${process.env.PORT}`);
 });
 
 //  unhandled promise rejection
