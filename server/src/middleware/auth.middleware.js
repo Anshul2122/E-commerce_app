@@ -4,9 +4,10 @@ import asyncHandler from "./catchAsyncErrors.js";
 import jwt from 'jsonwebtoken';
 
 const adminOnly =  asyncHandler(async(req, res, next) => {
+    // console.log(req.user);
     const user = await User.findById(req.user); 
     if(!user){
-        return next(new ErrorHandler("invalid id", 401));
+        return next(new ErrorHandler("user not found", 404));
     }
     if(user.role!=="admin"){
         return next(new ErrorHandler("you are not allowed to access these resouces", 403));

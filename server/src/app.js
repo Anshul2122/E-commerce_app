@@ -37,10 +37,12 @@ app.use((req, res, next) => {
 
 import userRoute from "./routes/user.route.js"
 import adminRoute from "./routes/admin.route.js"
+import productRoute from "./routes/product.route.js"
 
 
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/admin", adminRoute)
+app.use("/api/v1/product", productRoute);
 
 
 export default app;

@@ -2,7 +2,6 @@ import ErrorHandler from './../utils/errorHandler.js';
 import asyncHandler from './../middleware/catchAsyncErrors.js';
 import User from './../models/user.model.js';
 import {uploadOnCloudinary } from "../config/cloudinary.js"
-import { request } from 'express';
 
 
 const generateAccessTokenAndRefreshToken = async(userId)=>{
