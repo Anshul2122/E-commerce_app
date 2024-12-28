@@ -1,6 +1,7 @@
 
 import app from "./app.js";
 import connectDB from './config/db.js';
+// import { connectRedis } from "./config/redis.js";
 
 
 if(process.env.NODE_ENV === 'production'){
@@ -15,6 +16,7 @@ process.on("uncaughtException", (err)=>{
 });
 
 connectDB();
+// connectRedis(process.env.REDIS_URI)
 
 const server = app.listen(process.env.PORT, ()=>{
     console.log(`Server is working on port: ${process.env.PORT}`);

@@ -44,6 +44,9 @@ const UserSchema = new mongoose.Schema(
             type:String,
             required: [true, 'Date of birth is required']
         },
+        refreshToken:{
+            type:String,
+        },
         resetPasswordToken:{
             type:String,
             required:false
@@ -92,6 +95,32 @@ UserSchema.methods.verifyResetToken = function(token) {
         return false;
     }
 }
+
+UserSchema.methods.generateAccessToken = function(){
+    return jwt.sign(
+      {
+        _id: this._id,
+        email: this.email,
+        name: this.name
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+      }
+    )
+  }
+  
+  UserSchema.methods.generateRefreshToken = function(){
+    return jwt.sign(
+      {
+        _id: this._id,
+      },
+      process.env.REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+      }
+    )
+  }
 
 const User = mongoose.model("User", UserSchema);
 export default User;
