@@ -5,6 +5,8 @@ import { deleteProduct, getAdminProducts, getAllCategoryProducts, getAllProducts
 
 const router = express.Router();
 
+//localhost:{port}/api/v1/product
+
 router.route('/new').post(isAuthenticatedUser , adminOnly, upload.array("photos", 5), newProduct) // new product by admin only
 router.route('/all').get(getAllProducts)   // get all products
 router.route('/latest').get(getlatestProducts) // get latest product

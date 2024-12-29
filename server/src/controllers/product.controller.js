@@ -28,7 +28,7 @@ const newProduct = asyncHandler(async(req,res,next) => {
         productBy:req.user._id,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
         success: true,
         message:"product added",
         product
@@ -68,7 +68,7 @@ const getAllProducts = asyncHandler(async (req, res, next) => {
 
    
     const totalPage = Math.ceil(filteredProduct.length / limit);
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         product, totalPage
     })
@@ -79,13 +79,13 @@ const getlatestProducts = asyncHandler(async(req,res,next)=>{
     if(!products){
         return next(new ErrorHandler("No products found", 404))
     }
-    res.status(200).json({success:true, message:"latest products fetched", products})
+    return res.status(200).json({success:true, message:"latest products fetched", products})
 })
 
 const getAllCategoryProducts = asyncHandler(async(req,res,next)=>{
     const categories = await Product.distinct("category");
     
-    res.status(200).json({success:true, message:"latest products fetched", categories})
+    return res.status(200).json({success:true, message:"latest products fetched", categories})
 });
 
 const getCategoryProduct = asyncHandler(async(req,res,next)=>{
@@ -99,7 +99,7 @@ const getCategoryProduct = asyncHandler(async(req,res,next)=>{
             message: "No products found in this category"
         });
     }
-    res.status(200).json({success:true, message:`${category} founded`, products})
+    return res.status(200).json({success:true, message:`${category} founded`, products})
 });
 
 const getAdminProducts = asyncHandler(async(req,res,next)=>{
@@ -115,7 +115,7 @@ const getAdminProducts = asyncHandler(async(req,res,next)=>{
     if(!products){
         return next(new ErrorHandler("No products found", 404));
     }
-    res.status(200).json({success:true, message:"admin products fetched", products})
+    return res.status(200).json({success:true, message:"admin products fetched", products})
 });
 
 const getSingleProduct = asyncHandler(async(req,res,next)=>{
@@ -126,7 +126,7 @@ const getSingleProduct = asyncHandler(async(req,res,next)=>{
         return next(new ErrorHandler(`product with ${id} id not found not found`, 404));
     }
 
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         product
     })
@@ -174,7 +174,7 @@ const updateProduct = asyncHandler(async(req, res, next)=>{
 
     product = await Product.findById(id);
 
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         message:"product updated",
         product,
@@ -191,7 +191,7 @@ const deleteProduct = asyncHandler(async(req, res, next)=>{
     }
     await product.deleteOne();
 
-    res.status(200).json({
+    return res.status(200).json({
         message:`User account deleted`,
         success: true
     });

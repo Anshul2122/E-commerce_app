@@ -35,14 +35,16 @@ app.use((req, res, next) => {
   });
 
 
-import userRoute from "./routes/user.route.js"
-import adminRoute from "./routes/admin.route.js"
-import productRoute from "./routes/product.route.js"
+import userRoute from "./routes/user.route.js";
+import adminRoute from "./routes/admin.route.js";
+import productRoute from "./routes/product.route.js";
+import orderRoute from "./routes/order.route.js";
 
 
 app.use("/api/v1/user", userRoute);
-app.use("/api/v1/admin", adminRoute)
+app.use("/api/v1/admin", adminRoute);
 app.use("/api/v1/product", productRoute);
+app.use("/api/v1/order", orderRoute);
 
 
 export default app;

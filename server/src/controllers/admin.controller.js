@@ -54,7 +54,7 @@ const adminLogout = asyncHandler(async(req, res, next)=>{
         }
     })
 
-    res.status(200).clearCookie(adminToken).json({
+    return res.status(200).clearCookie(adminToken).json({
         success: true,
         message: "admin logged out successfully."
     });
@@ -63,7 +63,7 @@ const adminLogout = asyncHandler(async(req, res, next)=>{
 const getAllUsers = asyncHandler(async(req, res, next)=>{
     const users = await User.find();
 
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         users
     })
@@ -77,7 +77,7 @@ const getSingleUser = asyncHandler(async(req, res, next)=>{
         return next(new ErrorHandler("User not found", 404));
     }
 
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         user
     })
@@ -91,7 +91,7 @@ const updateUserRole = asyncHandler(async(req, res, next)=>{
         }
     }, {new:true});
 
-    res.status(200).json({
+    return res.status(200).json({
         message:`${user.name} is now ${user.role}`,
         success: true,
         user
@@ -107,7 +107,7 @@ const deleteUser = asyncHandler(async(req, res, next)=>{
     }
     await user.deleteOne();
 
-    res.status(200).json({
+    return res.status(200).json({
         message:`User account deleted`,
         success: true
     });

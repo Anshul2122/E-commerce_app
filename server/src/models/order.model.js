@@ -25,9 +25,16 @@ const OrderSchema = new mongoose.Schema(
         required: [true, "please enter shipping pincode"],
       },
     },
-    user: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+    },
+    username: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
       required: true,
     },
     subTotal: {
@@ -40,7 +47,6 @@ const OrderSchema = new mongoose.Schema(
     },
     shippingCharges: {
       type: Number,
-      required: true,
     },
     discount: {
       type: Number,
@@ -51,20 +57,23 @@ const OrderSchema = new mongoose.Schema(
       required: true,
     },
     status: {
-        type: String,
-        enum:["Processing", "shipped", "Out for Delivery", "Delivered"],
-        default: "Processing",
+      type: String,
+      enum: ["Processing", "shipped", "Out for Delivery", "Delivered"],
+      default: "Processing",
     },
-    OrderItems: {
+    OrderItems: [
+      {
         name: String,
         photo: String,
         quantity: String,
         productId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User"
-        }
-    },
-  }, { timestamps: true }
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+      },
+    ],
+  },
+  { timestamps: true }
 );
 
 

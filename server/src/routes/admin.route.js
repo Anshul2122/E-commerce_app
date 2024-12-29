@@ -7,6 +7,8 @@ import { adminOnly } from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 
+//localhost:{port}/api/v1/admin
+
 router.route("/verify").post(adminLogin);
 router.route('/logout').post(isAuthenticatedUser,adminOnly, adminLogout);
 router.route("/Allusers").get(isAuthenticatedUser,adminOnly, getAllUsers)
