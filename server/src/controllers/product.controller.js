@@ -35,11 +35,42 @@ const newProduct = asyncHandler(async(req,res,next) => {
     })
 })
 
-const getAllProducts = asyncHandler(async(req,res,next)=>{
-    const products = await Product.find();
+const getAllProducts = asyncHandler(async (req, res, next) => {
+    const { search, sort, category, price } = req.query;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(process.env.PRODUCT_PER_PAGE) || 8;
+    const skip = (page - 1) * limit;
+    const baseQuery = {};
+    if (search) {
+        baseQuery.name = {
+            $regex: search,
+            $options:i,
+        }
+    }
+    if (price) {
+        baseQuery.price = {
+          price: { $lte: Number(price) },
+        };
+    }
+    if (category) { 
+        baseQuery.category = category;
+    }
+
+    const productPromise = Product.find(baseQuery)
+      .sort(sort && { price: sort === "ascending" ? 1 : -1 })
+      .limit(limit)
+      .skip(skip);
+
+    const [product, filteredProduct] = await Promise.all([
+      productPromise,
+      Product.find(baseQuery),
+    ]);
+
+   
+    const totalPage = Math.ceil(filteredProduct.length / limit);
     res.status(200).json({
         success: true,
-        products
+        product, totalPage
     })
 })
 
