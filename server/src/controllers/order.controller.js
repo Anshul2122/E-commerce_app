@@ -95,51 +95,33 @@ const getSingleOrder = asyncHandler(async (req, res, next) => {
 });
 
 const processOrder = asyncHandler(async (req, res, next) => {
-    let orderpercentage = 0;
-    const orderId = req.params.id;
-    const order = await Order.findById(orderId);
-    if (order.status === 'Processing') { 
-        orderpercentage = 1;
-    } else if (order.status === "shipped") {
-        orderpercentage = 2;
-    } else if(order.status === "Out for Delivery") {
-        orderpercentage = 3;
-    } else {
-        orderpercentage = 100;
+
+    const id  = req.params.id;
+    const order = await Order.findByIdAndUpdate(id);
+    if(!order) return next(new ErrorHandler("order not found", 404));
+
+    switch (order.status) {
+      case "Processing":
+        order.status = "Shipped";
+        break;
+      case "Shipped":
+        order.status = "Out for Delivery";
+        break;
+      case "Out for Delivery":
+        order.status = "Delivered";
+        break;
+      default:
+        order.status = "Delivered";
+        break;
     }
-    const { status } = req.body;
-    if (!status) return next(new ErrorHandler("status field is required", 400));
-    let realOrderPercentage = 1;
-    if (status === "Processing") {
-        realOrderPercentage = 1;
-    }
-      if (status === "shipped") {
-        realOrderPercentage = 2;
-      } else if (status === "Out for Delivery") {
-        realOrderPercentage = 3;
-      } else {
-        realOrderPercentage = 4;
-      }
-    if (realOrderPercentage<orderpercentage) {
-        return next(new ErrorHandler("you can not update status to previous status, keep it as it is now or change to next one"));
-    }
-    if (
-        status !== "shipped" &&
-        status !== "Out for Delivery" &&
-        status !== "Delivered" &&
-        status !== "Processing"
-    ) {
-        return next(new ErrorHandler("choose order status from the given options only"));
-    }
-   
-    if (!order) return next(new ErrorHandler("order not found", 404));
-    order.status = status;
+
     await order.save();
+    
     if(res.statusCode === 200) console.log("order status changed");
     
     return res.status(200).json({
         success: true,
-        message: `your order status is updated to ${status} and is in process`,
+        message: `your order status is updated to ${order.status} and is in process`,
       });
 });
 
