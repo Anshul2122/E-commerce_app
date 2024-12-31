@@ -10,10 +10,6 @@ const newOrder = asyncHandler(async (req, res, next) => {
     const {
       shippingInfo,
       OrderItems,
-      subTotal,
-      shippingCharges,
-      discount,
-      tax,
     } = req.body;
 
     const userId = req.user._id;
@@ -24,22 +20,15 @@ const newOrder = asyncHandler(async (req, res, next) => {
     const username = userOrdering.name;
     const email = userOrdering.email;
 
-    if (!shippingInfo || !OrderItems || !subTotal || !tax) {
+    if (!shippingInfo || !OrderItems ) {
       return next(new ErrorHandler("All fields are required ", 400));
     }
-    const amount = subTotal + tax + shippingCharges
-    const discountedAmount = amount - (amount*discount)/100
-    const total = Math.floor(discountedAmount)
     await Order.create({
         shippingInfo,
         OrderItems,
         userId: userId,
         username,
         email,
-        shippingCharges,
-        discount,
-        subTotal,
-        tax,
         total:total
     });
     await reduceStock(OrderItems);
