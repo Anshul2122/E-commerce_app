@@ -57,7 +57,7 @@ const getAllProducts = asyncHandler(async (req, res, next) => {
     }
 
     const productPromise = Product.find(baseQuery)
-      .sort(sort && { price: sort === "ascending" ? 1 : -1 })
+      .sort(sort && { price: sort === "asc" ? 1 : -1 })
       .limit(limit)
       .skip(skip);
 
@@ -198,6 +198,3 @@ const deleteProduct = asyncHandler(async(req, res, next)=>{
 })
 
 export {newProduct, getAllProducts, getlatestProducts, getAllCategoryProducts, getCategoryProduct, getAdminProducts, getSingleProduct, updateProduct, deleteProduct}
-
-
-//asyncHandler(async(req,res,next)=>{})

@@ -31,3 +31,5 @@ const apiError = (err, req, res, next) => {
         message: err.message,
     });
 }
+
+export default apiError; 

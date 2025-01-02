@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import Stripe from 'stripe';
+import apiError from "./middleware/error.js";
 
 
 const app = express();
@@ -45,11 +46,14 @@ import orderRoute from "./routes/order.route.js";
 import paymentRoute from "./routes/payment.route.js";
 
 
+
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/admin", adminRoute);
 app.use("/api/v1/product", productRoute);
 app.use("/api/v1/order", orderRoute);
 app.use("/api/v1/payment", paymentRoute);
+
+app.use(apiError)
 
 
 

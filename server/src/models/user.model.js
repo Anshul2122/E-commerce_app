@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { kMaxLength } from "buffer";
 
 const UserSchema = new mongoose.Schema(
     {
@@ -24,6 +25,13 @@ const UserSchema = new mongoose.Schema(
             required: [true, 'Password is required'],
             minLength:[8, "password must be at least 8 characters"],
             select:false,
+        },
+        phoneNumber: {
+            type: String,
+          required: [true, "please enter your phone number"],
+            unique: true,
+            minLength: [10, "enter valid phone number"],
+            maxLength:[10, "enter valid phone number"]
         },
         avatar:{
             type: String,

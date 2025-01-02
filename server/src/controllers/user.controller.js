@@ -23,28 +23,30 @@ const generateAccessTokenAndRefreshToken = async(userId)=>{
 
 
 const registerUser = asyncHandler(async(req, res, next) => {
-    const {name, email, password,gender, dob, role } = req.body;
+    const { name, email, password, gender, dob, role, phoneNumber } = req.body;
+    const existedUser = await User.findOne({ email, phoneNumber });
+    if (existedUser) {
+      return res.status(400).json({
+        success: false,
+        message: `user with ${email} or  phone number ${phoneNumber}  already exists or, try to login`,
+      });
+    }
     const avatarLocalPath = req.file.path;
     const results = await uploadOnCloudinary(avatarLocalPath)
     if(!results){
         return next(new ErrorHandler( "error in upload on cloudinary", 500));
     }
     const avatar=results.url;
-    if([name, email, password, gender, dob].some((field)=>field?.trim()==="")){
+    if([name, email, password, gender, dob, phoneNumber].some((field)=>field?.trim()==="")){
         return next(new ErrorHandler( "all fields are required", 400));
     }
-    const existedUser = await User.findOne({email});
-    if(existedUser){
-        return res.status(200).json({
-            success:true,
-            message:`welcome, ${existedUser.name}`
-        });
-    }
+    
 
     const user =  await User.create({
         name,
         email,
         password,
+        phoneNumber,
         gender,
         dob,
         avatar,
