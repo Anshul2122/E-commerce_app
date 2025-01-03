@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import Stripe from 'stripe';
 import apiError from "./middleware/error.js";
+import NodeCache from "node-cache";
 
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 
 export const stripe = new Stripe(process.env.STRIPE_API_KEY);
+export const myCache = new NodeCache();
 
 app.use((req, res, next) => {
     console.log(

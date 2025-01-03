@@ -3,6 +3,7 @@ import asyncHandler from './../middleware/catchAsyncErrors.js';
 import User from './../models/user.model.js';
 import {uploadOnCloudinary, deleteFromCloudinary } from "../config/cloudinary.js"
 import Product from '../models/product.model.js';
+import { myCache } from '../app.js';
 
 
 const newProduct = asyncHandler(async(req,res,next) => {
@@ -74,24 +75,47 @@ const getAllProducts = asyncHandler(async (req, res, next) => {
     })
 })
 
-const getlatestProducts = asyncHandler(async(req,res,next)=>{
-    const products = await Product.find({}).sort({createdAt:-1}).limit(5)
+const getlatestProducts = asyncHandler(async (req, res, next) => {
+    let products;
+
+    if (myCache.has("latest-products")) {
+        products = JSON.parse(myCache.get("latest-products"));
+    } else {
+        products = await Product.find({}).sort({ createdAt: -1 }).limit(5);
+        myCache.set("latest-products", JSON.stringify(products));
+    }
+    
     if(!products){
         return next(new ErrorHandler("No products found", 404))
     }
     return res.status(200).json({success:true, message:"latest products fetched", products})
 })
 
-const getAllCategoryProducts = asyncHandler(async(req,res,next)=>{
-    const categories = await Product.distinct("category");
-    
+const getAllCategoryProducts = asyncHandler(async (req, res, next) => {
+    let categories;
+    if (myCache.has("all-category-products")) { 
+        categories = JSON.parse(myCache.get("all-category-products"));
+    }
+    else {
+        categories = await Product.distinct("category");
+        myCache.set("all-category-products", JSON.stringify(categories));
+    }
+    if(!categories){
+        return next(new ErrorHandler("No categories found", 404));
+    }
     return res.status(200).json({success:true, message:"latest products fetched", categories})
 });
 
-const getCategoryProduct = asyncHandler(async(req,res,next)=>{
+const getCategoryProduct = asyncHandler(async (req, res, next) => {
+    let products;
     const {category} = req.query;
-    if(!category) return next(new ErrorHandler("Please provide category", 400));
-    const products = await Product.find({category});
+    if (!category) return next(new ErrorHandler("Please provide category", 400));
+    if (myCache.has(`category-${category}`)) {
+        products = JSON.parse(myCache.get(`category-${category}`));
+    } else {
+        products = await Product.find({ category });
+        myCache.set(`category-${category}`, JSON.stringify(products));
+    }
 
     if(products.length===0){
         return res.status(404).json({
@@ -107,11 +131,15 @@ const getAdminProducts = asyncHandler(async(req,res,next)=>{
     if(!admin || admin.role!== 'admin'){
         return next(new ErrorHandler("You are not allowed to access this info", 401))
     }
+
     const adminId = admin._id;
-    
-    const products = await Product.find({productBy:adminId});
-    console.log("products: ",products);
-    
+    let products
+    if (myCache.has(`product-${adminId}`)) {
+        products = JSON.parse(myCache.get(`product-${adminId}`))
+    } else {
+        products = await Product.find({ productBy: adminId });
+        myCache.set(`product-${adminId}`, JSON.stringify(products));
+    }
     if(!products){
         return next(new ErrorHandler("No products found", 404));
     }
@@ -120,8 +148,13 @@ const getAdminProducts = asyncHandler(async(req,res,next)=>{
 
 const getSingleProduct = asyncHandler(async(req,res,next)=>{
     const id = req.params.id;
-    const product = await Product.findById(id);
-
+    let product;
+    if (myCache.has(`product-${id}`)) {
+        product = JSON.parse(myCache.get(`product-${id}`));
+    } else {
+        product = await Product.findById(id);
+        myCache.set(`product-${id}`, JSON.stringify(product));
+    }
     if(!product){
         return next(new ErrorHandler(`product with ${id} id not found not found`, 404));
     }
@@ -170,6 +203,7 @@ const updateProduct = asyncHandler(async(req, res, next)=>{
     if(description){
         product.description=description;
     }
+    myCache.set(`product-${id}`, JSON.stringify(product));
     await product.save();
 
     product = await Product.findById(id);
@@ -184,15 +218,18 @@ const updateProduct = asyncHandler(async(req, res, next)=>{
 
 const deleteProduct = asyncHandler(async(req, res, next)=>{
     const id = req.params.id;
-    const product = await User.findById(id);
+    const product = await Product.findById(id);
 
     if(!product){
         return next(new ErrorHandler(`product with ${id} id not found`, 404));
     }
+    if (myCache.has(`product-${id}`)) {
+        myCache.del(`product-${id}`);
+    }
     await product.deleteOne();
 
     return res.status(200).json({
-        message:`User account deleted`,
+        message:`product removed`,
         success: true
     });
 })
