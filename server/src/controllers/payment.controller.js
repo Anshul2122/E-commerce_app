@@ -4,7 +4,7 @@ import User from "./../models/user.model.js";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import Coupon from "../models/coupon.model.js";
-import { stripe } from "../app.js";
+import { myCache, stripe } from "../app.js";
 
 
 const newCoupon = asyncHandler(async(req, res, next) => {
@@ -15,7 +15,8 @@ const newCoupon = asyncHandler(async(req, res, next) => {
     const coupon = await Coupon.create({ code, amount, validTill });
     if (res.statusCode === 200) {
         console.log('coupon created successfully');
-    }
+  }
+  myCache.set(`coupon-wuth-${code}`, JSON.stringify(coupon));
     return res.status(201).json({
         success: true,
         message: "Coupon created successfully",
@@ -25,8 +26,19 @@ const newCoupon = asyncHandler(async(req, res, next) => {
 
 const applyDiscount = asyncHandler(async (req, res, next) => {
     const { code } = req.query;
+    if (!code) {
+      return res.status(200).json({
+        message:"no coupon code is applied by user"
+      });
+    }
+    let discount;
+    if (myCache.has(`coupon-wuth-${code}`)) {
+      discount = JSON.parse(myCache.get(`coupon-wuth-${code}`));
+    } else {
+      discount = await Coupon.findOne({ code: code });
+    }
     
-    const discount = await Coupon.findOne({ code: code });
+    
     if (discount.status === "Expired") {
         return next(new ErrorHandler("Coupon has expired", 400));
     }
@@ -46,7 +58,14 @@ const applyDiscount = asyncHandler(async (req, res, next) => {
 });
 
 const allCoupon = asyncHandler(async (req, res, next) => {
-  const coupons = await Coupon.find({});
+  let coupons;
+  if (myCache.has(`All-coupon`)) { 
+    coupons = JSON.parse(myCache.get(`All-coupon`));
+  } else {
+    coupons = await Coupon.find({});
+    myCache.set(`All-coupon`, JSON.stringify(coupons));
+  }
+  
   if (!coupons) return next(new ErrorHandler("no coupon code available", 404));
   if (coupons.validTill < Date.now()) {
     coupons.status = "Expired";
@@ -65,8 +84,6 @@ const createPaymentIntent = asyncHandler(async (req, res, next) => {
   if (!amount) {
     return next(new ErrorHandler("please provide amount", 400));
   }
-
-
   const paymentIntent = await stripe.paymentIntents.create({
     amount: Number(amount) * 100,
     currency:"inr",
@@ -81,8 +98,14 @@ const createPaymentIntent = asyncHandler(async (req, res, next) => {
 });
 
 const getCoupon = asyncHandler(async (req, res, next) => {
-    const id = req.params.id;
-    const coupon = await Coupon.findById(id);
+  const id = req.params.id;
+  let coupon;
+    if (myCache.has(`coupon-wuth-${id}`)) {
+      coupon = JSON.parse(myCache.get(`coupon-wuth-${id}`));
+    } else {
+      coupon = await Coupon.findById(id);
+      myCache.set(`coupon-wuth-${id}`, JSON.stringify(coupon));
+    }
     if (!coupon)
       return next(new ErrorHandler("no coupon code available", 404));
 
@@ -95,8 +118,13 @@ const getCoupon = asyncHandler(async (req, res, next) => {
 
 const deleteCoupon = asyncHandler(async (req, res, next) => {
     const id = req.params.id;
+    if (myCache.has(`coupon-wuth-${id}`)) {
+      myCache.del(`coupon-wuth-${id}`);
+    }
     const coupon = await Coupon.findByIdAndDelete(id);
-    if (!coupon) return next(new ErrorHandler("no coupon code available", 404));
+    if (!coupon) {
+      return next(new ErrorHandler("no coupon code available", 404));
+    }
     return res.status(200).json({
       success: true,
       message: "Coupon deleted",
@@ -112,6 +140,7 @@ const updateCoupon = asyncHandler(async (req, res, next) => {
         validTill = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000);
     }
     const coupon = await Coupon.findByIdAndUpdate(id, { code, amount, validTill, status }, { new: true });
+    myCache.set(`coupon-wuth-${id}`, JSON.stringify(coupon));
     if (!coupon) return next(new ErrorHandler("no coupon code available", 404));
     return res.status(200).json({
       success: true,

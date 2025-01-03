@@ -2,6 +2,7 @@ import ErrorHandler from './../utils/errorHandler.js';
 import asyncHandler from './../middleware/catchAsyncErrors.js';
 import User from './../models/user.model.js';
 import {uploadOnCloudinary } from "../config/cloudinary.js"
+import { myCache } from '../app.js';
 
 
 const generateAccessTokenAndRefreshToken = async(userId)=>{
@@ -20,7 +21,6 @@ const generateAccessTokenAndRefreshToken = async(userId)=>{
         
     }
 }
-
 
 const registerUser = asyncHandler(async(req, res, next) => {
     const { name, email, password, gender, dob, role, phoneNumber } = req.body;
@@ -107,9 +107,18 @@ const logoutUser = asyncHandler(async(req, res, next) => {
     return res.status(200).clearCookie("refreshToken").json({message:"user logged out", success:true}) 
 });
 
-const getUserDetails = asyncHandler(async(req, res, next) => {
-    const user = await User.findById(req.user._id);
-
+const getUserDetails = asyncHandler(async (req, res, next) => {
+    let user;
+    if (myCache.has(`user-with-${req.user._id}`)) { 
+        user = JSON.parse(myCache.get(`user-with-${req.user._id}`));
+    } else {
+        user = await User.findById(req.user._id);
+        myCache.set(`user-with-${req.user._id}`, JSON.stringify(user));
+    }
+    if (!user) {
+        return next(new ErrorHandler("User not found", 404));
+    }
+    
     return res.status(200).json({success: true, user});
 });
 
@@ -148,18 +157,22 @@ const updateProfile =  asyncHandler(async(req, res, next) => {
             gender:gender, 
             dob:dob,
         }
-    }, {new :true}.select("-password"));
+    }, { new: true }.select("-password"));
+    
+    myCache.set(`user-with-${req.user._id}`, JSON.stringify(user));
 
     return res.status(200).json({success:true, message:"profile updated!", user})
 });
 
 const updatepassword = asyncHandler(async (req, res, next) => {
-    const {oldPassword, newPassword} = req.body;
+    const { oldPassword, newPassword } = req.body;
     const user = await User.findById(req.user._id).select("-password -refreshToken");
     const isPasswordCorrect = user.comparepassword(oldPassword);
     if(!isPasswordCorrect) {
         return next(new ErrorHandler("inncorrect old password", 401));
     }
+
+    myCache.set(`user-${req.user._id}`, JSON.stringify(user));
 
     user.password = newPassword;
     await user.save({validateBeforeSave:false});

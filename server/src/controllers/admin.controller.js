@@ -3,6 +3,7 @@ import jwt  from 'jsonwebtoken';
 import asyncHandler from './../middleware/catchAsyncErrors.js';
 import ErrorHandler from './../utils/errorHandler.js';
 import User from "../models/user.model.js"
+import { myCache } from '../app.js';
 
 const generateAccessTokenAndRefreshToken = async(userId)=>{
     try {
@@ -60,9 +61,15 @@ const adminLogout = asyncHandler(async(req, res, next)=>{
     });
 });
 
-const getAllUsers = asyncHandler(async(req, res, next)=>{
-    const users = await User.find();
+const getAllUsers = asyncHandler(async (req, res, next) => {
+    let users;
 
+    if (myCache.has(`All-users`)) { 
+        users = JSON.parse(myCache.get(`All-users`));
+    } else{ 
+        myCache.set(`All-users`, JSON.stringify(users));
+        users = await User.find();
+    }
     return res.status(200).json({
         success: true,
         users
@@ -71,8 +78,14 @@ const getAllUsers = asyncHandler(async(req, res, next)=>{
 
 const getSingleUser = asyncHandler(async(req, res, next)=>{
     const id = req.params.id;
-    const user = await User.findById(id);
 
+    let user;
+    if (myCache.has(`Single-user-${id}`)) { 
+        user = JSON.parse(myCache.get(`Single-user-${id}`));
+    } else {
+        user = await User.findById(id);
+        myCache.set(`Single-user-${id}`, JSON.stringify(user));
+    }
     if(!user){
         return next(new ErrorHandler("User not found", 404));
     }
@@ -89,7 +102,8 @@ const updateUserRole = asyncHandler(async(req, res, next)=>{
         $set:{
             role:req.body.role
         }
-    }, {new:true});
+    }, { new: true });
+    myCache.set(`Single-user-${id}`, JSON.stringify(user));
 
     return res.status(200).json({
         message:`${user.name} is now ${user.role}`,
@@ -104,6 +118,9 @@ const deleteUser = asyncHandler(async(req, res, next)=>{
 
     if(!user){
         return next(new ErrorHandler("User not found", 404));
+    }
+    if (myCache.has(`Single-user-${id}`)) {
+        myCache.del(`Single-user-${id}`);
     }
     await user.deleteOne();
 

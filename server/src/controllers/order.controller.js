@@ -4,6 +4,7 @@ import User from "./../models/user.model.js";
 import Order from "../models/order.model.js";
 import { reduceStock } from "../utils/feature.js";
 import Product from "../models/product.model.js";
+import { myCache } from "../app.js";
 
 
 const newOrder = asyncHandler(async (req, res, next) => {
@@ -37,20 +38,32 @@ const newOrder = asyncHandler(async (req, res, next) => {
 });
 
 const myOrders = asyncHandler(async (req, res, next) => {
-    console.log(req.user);
-    const userId = req.user._id;
-    const myOrder = await Order.find({ userId });
-    if (!myOrder) {
-        return next(new ErrorHandler("No orders found for this user", 404));
+  const userId = req.user._id;
+  let MyOrders;
+  if (myCache.has(`orders-with-${id}`)) {
+    MyOrders = JSON.parse(myCache.get(`orders-with-${id}`));
+  } else {
+    MyOrders = await Order.find({ userId });
+    myCache.set(`orders-with-${id}`, JSON.stringify(MyOrders));
+
+  }
+    if (!MyOrders) {
+      return next(new ErrorHandler("No orders found for this user", 404));
     }
     
-    res.status(200).json({ success: true, message: "orders found", myOrder });
+    res.status(200).json({ success: true, message: "orders found", MyOrders });
     
 });
 
 const getAllOrders = asyncHandler(async (req, res, next) => {
-    const adminId = req.user._id;
-    const products = await Product.find({ productBy: adminId });
+  const adminId = req.user._id;
+  let products;
+  if (myCache.has(`orders-by-${adminId}`)) {
+    products = JSON.parse(myCache.get(`orders-by-${adminId}`));
+  } else { 
+    products = await Product.find({ productBy: adminId });
+    myCache.set(`orders-by-${adminId}`, JSON.stringify(products));
+  }
     if (!products || products.length===0) return next(new ErrorHandler("No product added by you yet", 404));
     const productIds = products.map(product => product._id);
     const allOrders = await Order.find({"OrderItems.productId":{$in: productIds}})
@@ -72,22 +85,33 @@ const getAllOrders = asyncHandler(async (req, res, next) => {
 });
 
 const getSingleOrder = asyncHandler(async (req, res, next) => {
-    const orderId  = req.params.id;
-    const order = await Order.findById(orderId)
-    if (!order) return next(new ErrorHandler(`${order.username}'s order not found`, 404));
-    if (res.statusCode === 200) {
-      console.log("orders founded");
-    }
-    res
-      .status(200)
-      .json({ success: true, messag: `${order.username}'s order found`, order });
+  const orderId = req.params.id;
+  let order;
+  if (myCache.has(`single-order-with-${id}`)) {
+    order = JSON.parse(myCache.get(`single-order-with-${id}`));
+  } else {
+    order = await Order.findById(orderId);
+    myCache.set(`single-order-with-${id}`, JSON.stringify(order));
+  }
+  if (!order) return next(new ErrorHandler(`${order.username}'s order not found`, 404));
+  if (res.statusCode === 200) {
+    console.log("orders founded");
+  }
+  res
+    .status(200)
+    .json({ success: true, messag: `${order.username}'s order found`, order });
 });
 
 const processOrder = asyncHandler(async (req, res, next) => {
 
-    const id  = req.params.id;
-    const order = await Order.findByIdAndUpdate(id);
-    if(!order) return next(new ErrorHandler("order not found", 404));
+  const id = req.params.id;
+  let order;
+  if (myCache.has(`single-order-with-${id}`)) {
+    order = JSON.parse(myCache.get(`single-order-with-${id}`));
+  } else {
+    order = await Order.findById(id);
+  }
+  if(!order) return next(new ErrorHandler("order not found", 404));
 
     switch (order.status) {
       case "Processing":
@@ -104,7 +128,8 @@ const processOrder = asyncHandler(async (req, res, next) => {
         break;
     }
 
-    await order.save();
+  await order.save();
+  myCache.set(`single-order-with-${id}`, JSON.stringify(order));
     
     if(res.statusCode === 200) console.log("order status changed");
     
@@ -115,9 +140,11 @@ const processOrder = asyncHandler(async (req, res, next) => {
 });
 
 const deleteOrder = asyncHandler(async (req, res, next) => {
-    const orderId = req.params.id;
-    const order = await Order.findByIdAndDelete(orderId);
-    
+  const orderId = req.params.id;
+  const order = await Order.findByIdAndDelete(orderId);
+  if (myCache.has(`single-order-with-${order}`)){
+    myCache.del(`single-order-with-${order}`);
+  }
     if (!order) return next(new ErrorHandler(` order not found`, 404));
     if (res.statusCode === 200) {
       console.log("orders deleted");
